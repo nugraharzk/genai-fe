@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+.container-max {
+  max-width: 1200px;
+}
+
+.card { @apply bg-white rounded-xl shadow-sm border border-gray-200; }
+.glass { @apply bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60; }
+.panel { @apply card p-6; }
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 font-medium transition-colors cursor-pointer;
+}
+.btn-primary {
+  @apply bg-brand-600 text-white hover:bg-brand-700;
+}
+.btn-secondary {
+  @apply bg-gray-100 text-gray-900 hover:bg-gray-200;
+}
+.btn-ghost {
+  @apply bg-transparent text-gray-600 border border-gray-300 hover:bg-gray-100;
+}
+
+.btn-icon { @apply w-9 h-9 rounded-lg inline-grid place-items-center text-gray-600 hover:bg-gray-100; }
+
+.input, .select, .textarea, .file-input {
+  @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-200;
+}
+
+.tab {
+  @apply px-4 py-2 rounded-lg text-sm font-medium cursor-pointer select-none transition-colors;
+}
+.tab-active {
+  @apply bg-brand-600 text-white;
+}
+.tab-inactive {
+  @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+}
+
+.label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.output {
+  @apply whitespace-pre-wrap text-sm text-black bg-gray-50 rounded-lg p-4 border border-gray-200 min-h-[220px] break-words;
+}
+
+.dropzone {
+  @apply flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50/60 p-6 text-gray-600 transition hover:border-brand-400 hover:bg-brand-50/30;
+}
+.dropzone-active { @apply border-brand-500 bg-brand-50/60; }
+.thumb { @apply mt-2 rounded-lg border border-gray-200 shadow-sm overflow-hidden; }
+
+/* Markdown within .output */
+.output.markdown h1 { @apply text-2xl font-bold mt-2 mb-2; }
+.output.markdown h2 { @apply text-xl font-semibold mt-2 mb-2; }
+.output.markdown h3 { @apply text-lg font-semibold mt-2 mb-2; }
+.output.markdown p { @apply my-2; }
+.output.markdown ul { @apply list-disc pl-6 my-2; }
+.output.markdown ol { @apply list-decimal pl-6 my-2; }
+.output.markdown li { @apply my-1; }
+.output.markdown blockquote { @apply border-l-4 border-gray-300 pl-3 italic text-gray-700 my-3 bg-white/40; }
+.output.markdown hr { @apply my-4 border-gray-200; }
+.output.markdown table { @apply w-full border-collapse my-3; }
+.output.markdown th, .output.markdown td { @apply border border-gray-200 px-2 py-1 text-left align-top; }
+.output.markdown img { @apply max-w-full rounded-lg border border-gray-200 shadow-sm my-2; }
+.output.markdown pre { @apply my-2; }
+.output.markdown code { @apply break-words; }
