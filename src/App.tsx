@@ -1,71 +1,105 @@
-import { useMemo, useState } from 'react';
-import TextPanel from './components/TextPanel';
-import FilePanel from './components/FilePanel';
-import { generateFromAudioApi, generateFromDocumentApi, generateFromImageApi } from './api';
+import { lazy, Suspense, useMemo, useState, type LazyExoticComponent } from 'react';
+import { Card, cn } from './components';
+import { Footer, Header, MainOutlet, Sidebar, MobileBottomNav } from './layouts';
+import type { NavItem, TabKey } from './types/navigation';
+import {
+  CursorArrowRaysIcon,
+  DocumentTextIcon,
+  MusicalNoteIcon,
+  PhotoIcon,
+} from '@heroicons/react/24/outline';
 
-type TabKey = 'text' | 'image' | 'document' | 'audio';
+const navItems: NavItem[] = [
+  {
+    key: 'text',
+    label: 'Text',
+    description: 'Craft structured prompts and pure text requests',
+    icon: CursorArrowRaysIcon,
+  },
+  {
+    key: 'image',
+    label: 'Image',
+    description: 'Combine visuals with a prompt for multimodal output',
+    icon: PhotoIcon,
+  },
+  {
+    key: 'document',
+    label: 'Document',
+    description: 'Summarise or analyse PDFs, slides and rich docs',
+    icon: DocumentTextIcon,
+  },
+  {
+    key: 'audio',
+    label: 'Audio',
+    description: 'Transcribe or reason over voice recordings',
+    icon: MusicalNoteIcon,
+  },
+];
+
+const pageComponents: Record<TabKey, LazyExoticComponent<() => JSX.Element>> = {
+  text: lazy(() => import('./pages/TextPage')),
+  image: lazy(() => import('./pages/ImagePage')),
+  document: lazy(() => import('./pages/DocumentPage')),
+  audio: lazy(() => import('./pages/AudioPage')),
+};
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>('text');
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isHovering, setIsHovering] = useState(false);
 
-  const title = useMemo(() => {
-    switch (tab) {
-      case 'text':
-        return 'Text Generation';
-      case 'image':
-        return 'Image + Prompt';
-      case 'document':
-        return 'Document + Prompt';
-      case 'audio':
-        return 'Audio + Prompt';
-    }
-  }, [tab]);
+  const apiBase =
+    (window as any).__APP_CONFIG__?.API_BASE_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    'http://localhost:5000';
+
+  const PageComponent = pageComponents[tab];
+  const expandedForDisplay = useMemo(() => !isCollapsed || isHovering, [isCollapsed, isHovering]);
+  const expandedPinned = useMemo(() => !isCollapsed, [isCollapsed]);
+  const sidebarOffsetClass = expandedPinned ? 'lg:ml-64' : 'lg:ml-[4.5rem]';
+  const headerPaddingClass = expandedPinned ? 'lg:pl-64' : 'lg:pl-[4.5rem]';
+  const activeItem = navItems.find((item) => item.key === tab) ?? navItems[0];
 
   return (
-    <div>
-      <header className="bg-gradient-to-r from-brand-600 to-indigo-600">
-        <div className="mx-auto container-max px-4 py-6 flex items-center justify-between text-white">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-white/20 grid place-items-center font-bold">G</div>
-            <div>
-              <div className="font-semibold">GenAI Interface by @nugraharzk</div>
-              <div className="text-xs text-white/80">NestJS + Gemini backend</div>
-            </div>
-          </div>
-          <a className="btn bg-white/10 hover:bg-white/20 text-white" href="#" onClick={(e) => e.preventDefault()}>Docs</a>
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col bg-slate-100 text-slate-900">
+      <Header offsetClass={headerPaddingClass} onDocsClick={() => undefined} />
 
-      <main className="mx-auto container-max px-4 py-6">
-        <div className="mb-4 flex gap-2">
-          <button className={`tab ${tab === 'text' ? 'tab-active' : 'tab-inactive'}`} onClick={() => setTab('text')}>Text</button>
-          <button className={`tab ${tab === 'image' ? 'tab-active' : 'tab-inactive'}`} onClick={() => setTab('image')}>Image</button>
-          <button className={`tab ${tab === 'document' ? 'tab-active' : 'tab-inactive'}`} onClick={() => setTab('document')}>Document</button>
-          <button className={`tab ${tab === 'audio' ? 'tab-active' : 'tab-inactive'}`} onClick={() => setTab('audio')}>Audio</button>
-        </div>
+      <Sidebar
+        items={navItems}
+        activeKey={tab}
+        expanded={expandedForDisplay}
+        onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
+        onSelect={setTab}
+        onHoverChange={setIsHovering}
+        apiBase={apiBase}
+      />
 
-        <div className="panel glass ring-1 ring-black/5">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
-            <div className="text-xs text-gray-500">API: {(window as any).__APP_CONFIG__?.API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}</div>
-          </div>
-
-          {tab === 'text' && <TextPanel />}
-          {tab === 'image' && (
-            <FilePanel mode="image" accept="image/*" helper="Max 15MB" submit={generateFromImageApi} />
-          )}
-          {tab === 'document' && (
-            <FilePanel mode="document" accept=".pdf,.doc,.docx,.txt,.md,.rtf,.html,.htm,.ppt,.pptx,.xls,.xlsx,application/*,text/*" helper="Max 20MB" submit={generateFromDocumentApi} />
-          )}
-          {tab === 'audio' && (
-            <FilePanel mode="audio" accept="audio/*" helper="Max 25MB" submit={generateFromAudioApi} />
-          )}
+      <main className={cn('flex flex-1 flex-col pt-24 transition-all duration-200 sm:pt-28', sidebarOffsetClass)}>
+        <div className="flex w-full flex-1 flex-col px-4 pb-32 sm:px-6 lg:px-8 lg:pb-24">
+          <MainOutlet
+            items={navItems}
+            activeKey={tab}
+            activeItem={activeItem}
+            onSelect={setTab}
+          >
+            <Suspense
+              fallback={
+                <Card className="flex min-h-[360px] items-center justify-center text-sm text-slate-500">
+                  Loading workflow…
+                </Card>
+              }
+            >
+              <PageComponent />
+            </Suspense>
+          </MainOutlet>
         </div>
       </main>
 
-      <footer className="mx-auto container-max px-4 py-8 text-center text-xs text-gray-500">
-        Built with React, Vite, Tailwind.
-      </footer>
+      <MobileBottomNav items={navItems} activeKey={tab} onSelect={setTab} />
+
+      <div className={cn('transition-all duration-200', sidebarOffsetClass)}>
+        <Footer />
+      </div>
     </div>
   );
 }
