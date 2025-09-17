@@ -10,10 +10,11 @@ WORKDIR /app
 ENV NODE_ENV=development
 ENV VITE_API_BASE_URL=http://localhost:5001
 COPY package.json ./
+COPY pnpm-workspace.yaml ./
 # No lock file present; allow resolver to generate it
 RUN pnpm install --no-frozen-lockfile
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 FROM base AS runner
 WORKDIR /app

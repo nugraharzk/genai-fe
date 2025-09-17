@@ -23,8 +23,10 @@ export default function MarkdownOutput({ content }: Props) {
               className="text-brand-600 underline hover:text-brand-700"
             />
           ),
-          code: ({ inline, className, children, ...props }) => {
-            if (inline) {
+          code: ({ node, className, children, ...props }) => {
+            // @ts-ignore: 'inline' is not typed but present on node
+            const isInline = node && (node.inline as boolean);
+            if (isInline) {
               return (
                 <code
                   className="px-1 py-0.5 rounded bg-gray-100 border border-gray-200"
