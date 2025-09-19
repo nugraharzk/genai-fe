@@ -1,5 +1,6 @@
 import { lazy, Suspense, useMemo, useState, type LazyExoticComponent } from 'react';
 import { Card, cn } from './components';
+import Chatbot from './components/elements/Chatbot';
 import { Footer, Header, MainOutlet, Sidebar, MobileBottomNav } from './layouts';
 import type { NavItem, TabKey } from './types/navigation';
 import {
@@ -56,8 +57,8 @@ export default function App() {
   const PageComponent = pageComponents[tab];
   const expandedForDisplay = useMemo(() => !isCollapsed || isHovering, [isCollapsed, isHovering]);
   const expandedPinned = useMemo(() => !isCollapsed, [isCollapsed]);
-  const sidebarOffsetClass = expandedPinned ? 'lg:ml-64' : 'lg:ml-[4.5rem]';
-  const headerPaddingClass = expandedPinned ? 'lg:pl-64' : 'lg:pl-[4.5rem]';
+  const sidebarOffsetClass = expandedPinned ? 'lg:ml-64' : 'lg:ml-[4rem]';
+  const headerPaddingClass = expandedPinned ? 'lg:pl-64' : 'lg:pl-[4rem]';
   const activeItem = navItems.find((item) => item.key === tab) ?? navItems[0];
 
   return (
@@ -100,6 +101,7 @@ export default function App() {
       <div className={cn('transition-all duration-200', sidebarOffsetClass)}>
         <Footer />
       </div>
+      <Chatbot />
     </div>
   );
 }
