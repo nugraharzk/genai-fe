@@ -1,11 +1,12 @@
-import { API_BASE, NETWORK_ERROR_MESSAGE } from './config';
-import { parseError } from './errors';
-import type { GenerateResponse } from './types';
+import { API_BASE, NETWORK_ERROR_MESSAGE } from "./config";
+import { parseError } from "./errors";
+import type { GenerateResponse } from "./types";
 
 type GenerateTextRequest = {
   prompt: string;
   model?: string;
   systemInstruction?: string;
+  provider?: string;
 };
 
 type UploadWithPromptParams = {
@@ -13,14 +14,17 @@ type UploadWithPromptParams = {
   prompt?: string;
   model?: string;
   systemInstruction?: string;
+  provider?: string;
 };
 
-export async function generateTextApi(input: GenerateTextRequest): Promise<GenerateResponse> {
+export async function generateTextApi(
+  input: GenerateTextRequest,
+): Promise<GenerateResponse> {
   let res: Response;
   try {
     res = await fetch(`${API_BASE}/generate-text`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
   } catch {
@@ -41,14 +45,16 @@ async function uploadWithPrompt(
 ): Promise<GenerateResponse> {
   const fd = new FormData();
   fd.append(fileField, params.file);
-  if (params.prompt) fd.append('prompt', params.prompt);
-  if (params.model) fd.append('model', params.model);
-  if (params.systemInstruction) fd.append('systemInstruction', params.systemInstruction);
+  if (params.prompt) fd.append("prompt", params.prompt);
+  if (params.model) fd.append("model", params.model);
+  if (params.systemInstruction)
+    fd.append("systemInstruction", params.systemInstruction);
+  if (params.provider) fd.append("provider", params.provider);
 
   let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}`, {
-      method: 'POST',
+      method: "POST",
       body: fd,
     });
   } catch {
@@ -63,13 +69,13 @@ async function uploadWithPrompt(
 }
 
 export function generateFromImageApi(params: UploadWithPromptParams) {
-  return uploadWithPrompt('/generate-from-image', 'image', params);
+  return uploadWithPrompt("/generate-from-image", "image", params);
 }
 
 export function generateFromDocumentApi(params: UploadWithPromptParams) {
-  return uploadWithPrompt('/generate-from-document', 'document', params);
+  return uploadWithPrompt("/generate-from-document", "document", params);
 }
 
 export function generateFromAudioApi(params: UploadWithPromptParams) {
-  return uploadWithPrompt('/generate-from-audio', 'audio', params);
+  return uploadWithPrompt("/generate-from-audio", "audio", params);
 }

@@ -6,37 +6,52 @@ import {
   type FormEvent,
   type KeyboardEvent,
   type MouseEvent,
-} from 'react';
+} from "react";
 import {
   ArrowUpTrayIcon,
   DocumentTextIcon,
   MusicalNoteIcon,
   PhotoIcon,
   ClipboardDocumentIcon,
-} from '@heroicons/react/24/outline';
-import ModelSelect from './ModelSelect';
-import MarkdownOutput from './MarkdownOutput';
-import ErrorAlert from './ErrorAlert';
-import { Button, Card, IconButton } from '../base';
-import { Field, Textarea } from '../form';
-import { cn } from '../utils';
-import type { GenerateResponse } from '../../api';
+} from "@heroicons/react/24/outline";
+import ModelSelect from "./ModelSelect";
+import ProviderSelect from "./ProviderSelect";
+import MarkdownOutput from "./MarkdownOutput";
+import ErrorAlert from "./ErrorAlert";
+import { Button, Card, IconButton } from "../base";
+import { Field, Textarea } from "../form";
+import { cn } from "../utils";
+import type { GenerateResponse } from "../../api";
 
 type Props = {
-  mode: 'image' | 'document' | 'audio';
-  submit: (params: { file: File; prompt?: string; model?: string; systemInstruction?: string }) => Promise<GenerateResponse>;
+  mode: "image" | "document" | "audio";
+
+  submit: (params: {
+    file: File;
+
+    prompt?: string;
+
+    model?: string;
+
+    systemInstruction?: string;
+
+    provider?: string;
+  }) => Promise<GenerateResponse>;
+
   accept: string;
+
   helper?: string;
 };
 
 export default function FilePanel({ mode, submit, accept, helper }: Props) {
   const [file, setFile] = useState<File | null>(null);
-  const [prompt, setPrompt] = useState('');
-  const [systemInstruction, setSystemInstruction] = useState('');
-  const [model, setModel] = useState<string>('');
+  const [prompt, setPrompt] = useState("");
+  const [systemInstruction, setSystemInstruction] = useState("");
+  const [model, setModel] = useState<string>("");
+  const [provider, setProvider] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerateResponse | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [errorMsg, setErrorMsg] = useState<string>("");
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -51,20 +66,26 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
     if (!file) return;
     setLoading(true);
     setResult(null);
-    setErrorMsg('');
+    setErrorMsg("");
     try {
       const data = await submit({
         file,
+
         prompt: prompt || undefined,
+
         systemInstruction: systemInstruction || undefined,
+
         model: model || undefined,
+
+        provider: provider || undefined,
       });
+
       if (data?.error) {
         setErrorMsg(data.error);
         setResult(null);
       } else {
         setResult(data);
-        setErrorMsg('');
+        setErrorMsg("");
       }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : String(err));
@@ -79,12 +100,12 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
 
   function onClear() {
     setFile(null);
-    if (inputRef.current) inputRef.current.value = '';
-    setPrompt('');
-    setSystemInstruction('');
-    setModel('');
+    if (inputRef.current) inputRef.current.value = "";
+    setPrompt("");
+    setSystemInstruction("");
+    setModel("");
     setResult(null);
-    setErrorMsg('');
+    setErrorMsg("");
     setDragActive(false);
   }
 
@@ -109,30 +130,40 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
   }
 
   function handleShortcutSubmit(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
       formRef.current?.requestSubmit();
     }
   }
 
-  const isImage = mode === 'image' && file && file.type.startsWith('image/');
-  const isAudio = mode === 'audio' && file && file.type.startsWith('audio/');
+  const isImage = mode === "image" && file && file.type.startsWith("image/");
+  const isAudio = mode === "audio" && file && file.type.startsWith("audio/");
 
   const modeMeta = {
     image: {
       icon: <PhotoIcon className="h-8 w-8 text-brand-600" aria-hidden="true" />,
-      title: 'Upload image',
-      subtitle: 'PNG, JPG, HEIC up to 15MB',
+      title: "Upload image",
+      subtitle: "PNG, JPG, HEIC up to 15MB",
     },
     document: {
-      icon: <DocumentTextIcon className="h-8 w-8 text-brand-600" aria-hidden="true" />,
-      title: 'Upload document',
-      subtitle: 'PDF, DOCX, TXT and more up to 20MB',
+      icon: (
+        <DocumentTextIcon
+          className="h-8 w-8 text-brand-600"
+          aria-hidden="true"
+        />
+      ),
+      title: "Upload document",
+      subtitle: "PDF, DOCX, TXT and more up to 20MB",
     },
     audio: {
-      icon: <MusicalNoteIcon className="h-8 w-8 text-brand-600" aria-hidden="true" />,
-      title: 'Upload audio',
-      subtitle: 'MP3, WAV, MPEG up to 25MB',
+      icon: (
+        <MusicalNoteIcon
+          className="h-8 w-8 text-brand-600"
+          aria-hidden="true"
+        />
+      ),
+      title: "Upload audio",
+      subtitle: "MP3, WAV, MPEG up to 25MB",
     },
   } as const;
 
@@ -141,7 +172,9 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
       <Card className="h-fit">
         <form ref={formRef} onSubmit={onSubmit} className="space-y-6">
           <div className="space-y-1">
-            <h2 className="text-base font-semibold text-slate-900">Upload &amp; prompt</h2>
+            <h2 className="text-base font-semibold text-slate-900">
+              Upload &amp; prompt
+            </h2>
             <p className="text-sm text-slate-500">
               Combine a {mode} file with optional prompt and system instruction.
             </p>
@@ -150,8 +183,10 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
           <div>
             <div
               className={cn(
-                'flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 px-6 py-8 text-center transition',
-                dragActive ? 'border-brand-500 bg-brand-50/70' : 'hover:border-brand-400',
+                "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 px-6 py-8 text-center transition",
+                dragActive
+                  ? "border-brand-500 bg-brand-50/70"
+                  : "hover:border-brand-400",
               )}
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
@@ -160,8 +195,12 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
             >
               {modeMeta[mode].icon}
               <div className="space-y-1">
-                <p className="text-sm font-medium text-slate-800">{modeMeta[mode].title}</p>
-                <p className="text-xs text-slate-500">{modeMeta[mode].subtitle}</p>
+                <p className="text-sm font-medium text-slate-800">
+                  {modeMeta[mode].title}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {modeMeta[mode].subtitle}
+                </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs text-slate-500">
                 <span>Drag &amp; drop</span>
@@ -182,15 +221,32 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
                 Browse files
               </Button>
             </div>
-            <input ref={inputRef} className="hidden" type="file" accept={accept} onChange={onPick} />
-            {helper ? <p className="mt-2 text-xs text-slate-500">{helper}</p> : null}
+            <input
+              ref={inputRef}
+              className="hidden"
+              type="file"
+              accept={accept}
+              onChange={onPick}
+            />
+            {helper ? (
+              <p className="mt-2 text-xs text-slate-500">{helper}</p>
+            ) : null}
             {file ? (
               <div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-slate-800">{file.name}</p>
-                  <p className="text-xs text-slate-500">{(file.size / 1024).toFixed(1)} KB</p>
+                  <p className="truncate font-medium text-slate-800">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {(file.size / 1024).toFixed(1)} KB
+                  </p>
                 </div>
-                <Button type="button" size="sm" variant="ghost" onClick={onClear}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={onClear}
+                >
                   Remove
                 </Button>
               </div>
@@ -203,7 +259,11 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
               />
             ) : null}
             {isAudio ? (
-              <audio className="mt-3 w-full" controls src={URL.createObjectURL(file!)} />
+              <audio
+                className="mt-3 w-full"
+                controls
+                src={URL.createObjectURL(file!)}
+              />
             ) : null}
           </div>
 
@@ -214,7 +274,9 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
                 rows={4}
                 placeholder="Optional context or question"
                 value={prompt}
-                onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setPrompt(event.target.value)}
+                onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+                  setPrompt(event.target.value)
+                }
                 onKeyDown={handleShortcutSubmit}
               />
             )}
@@ -228,13 +290,24 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
                 placeholder="Guide the model’s behavior"
                 value={systemInstruction}
                 onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-                  setSystemInstruction(event.target.value)}
+                  setSystemInstruction(event.target.value)
+                }
                 onKeyDown={handleShortcutSubmit}
               />
             )}
           </Field>
 
-          <ModelSelect value={model} onChange={setModel} />
+          <ProviderSelect
+            value={provider}
+            onChange={(next) => {
+              setProvider(next);
+              if (next !== "gemini") setModel("");
+            }}
+          />
+
+          {provider === "gemini" && (
+            <ModelSelect value={model} onChange={setModel} />
+          )}
 
           <div className="flex flex-wrap gap-3">
             <Button type="submit" isLoading={loading} disabled={!file}>
@@ -251,7 +324,9 @@ export default function FilePanel({ mode, submit, accept, helper }: Props) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Output</h2>
-            <p className="text-xs text-slate-500">Generated response appears here after processing.</p>
+            <p className="text-xs text-slate-500">
+              Generated response appears here after processing.
+            </p>
           </div>
           <IconButton
             type="button"

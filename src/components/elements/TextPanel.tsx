@@ -1,37 +1,46 @@
-import { useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from 'react';
-import { ClipboardDocumentIcon } from '@heroicons/react/24/outline';
-import ModelSelect from './ModelSelect';
-import MarkdownOutput from './MarkdownOutput';
-import ErrorAlert from './ErrorAlert';
-import { generateTextApi, type GenerateResponse } from '../../api';
-import { Button, Card, Field, IconButton, Textarea } from '..';
+import {
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
+import { ClipboardDocumentIcon } from "@heroicons/react/24/outline";
+import ModelSelect from "./ModelSelect";
+import ProviderSelect from "./ProviderSelect";
+import MarkdownOutput from "./MarkdownOutput";
+import ErrorAlert from "./ErrorAlert";
+import { generateTextApi, type GenerateResponse } from "../../api";
+import { Button, Card, Field, IconButton, Textarea } from "..";
 
 export default function TextPanel() {
-  const [prompt, setPrompt] = useState('');
-  const [systemInstruction, setSystemInstruction] = useState('');
-  const [model, setModel] = useState<string>('');
+  const [prompt, setPrompt] = useState("");
+  const [systemInstruction, setSystemInstruction] = useState("");
+  const [model, setModel] = useState<string>("");
+  const [provider, setProvider] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GenerateResponse | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [errorMsg, setErrorMsg] = useState<string>("");
   const formRef = useRef<HTMLFormElement>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setResult(null);
-    setErrorMsg('');
+    setErrorMsg("");
     try {
       const data = await generateTextApi({
         prompt,
         systemInstruction: systemInstruction || undefined,
         model: model || undefined,
+        provider: provider || undefined,
       });
       if (data?.error) {
         setErrorMsg(data.error);
         setResult(null);
       } else {
         setResult(data);
-        setErrorMsg('');
+        setErrorMsg("");
       }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : String(err));
@@ -45,15 +54,16 @@ export default function TextPanel() {
   }
 
   function onClear() {
-    setPrompt('');
-    setSystemInstruction('');
-    setModel('');
+    setPrompt("");
+    setSystemInstruction("");
+    setModel("");
+    setProvider("");
     setResult(null);
-    setErrorMsg('');
+    setErrorMsg("");
   }
 
   function handleShortcutSubmit(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
       formRef.current?.requestSubmit();
     }
@@ -64,13 +74,19 @@ export default function TextPanel() {
       <Card className="h-fit">
         <form ref={formRef} onSubmit={onSubmit} className="space-y-6">
           <div className="space-y-1">
-            <h2 className="text-base font-semibold text-slate-900">Prompt setup</h2>
+            <h2 className="text-base font-semibold text-slate-900">
+              Prompt setup
+            </h2>
             <p className="text-sm text-slate-500">
-              Provide instructions and optional system guidance to compose a text response.
+              Provide instructions and optional system guidance to compose a
+              text response.
             </p>
           </div>
 
-          <Field label="Prompt" error={!prompt && loading ? 'Prompt is required' : undefined}>
+          <Field
+            label="Prompt"
+            error={!prompt && loading ? "Prompt is required" : undefined}
+          >
             {(id: string) => (
               <Textarea
                 id={id}
@@ -78,7 +94,9 @@ export default function TextPanel() {
                 rows={7}
                 placeholder="Ask anything…"
                 value={prompt}
-                onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setPrompt(event.target.value)}
+                onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+                  setPrompt(event.target.value)
+                }
                 onKeyDown={handleShortcutSubmit}
               />
             )}
@@ -92,13 +110,23 @@ export default function TextPanel() {
                 placeholder="Guide the model’s behavior"
                 value={systemInstruction}
                 onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-                  setSystemInstruction(event.target.value)}
+                  setSystemInstruction(event.target.value)
+                }
                 onKeyDown={handleShortcutSubmit}
               />
             )}
           </Field>
 
-          <ModelSelect value={model} onChange={setModel} />
+          <ProviderSelect
+            value={provider}
+            onChange={(next) => {
+              setProvider(next);
+              if (next !== "gemini") setModel("");
+            }}
+          />
+          {provider === "gemini" && (
+            <ModelSelect value={model} onChange={setModel} />
+          )}
 
           <div className="flex flex-wrap gap-3">
             <Button type="submit" isLoading={loading} disabled={!prompt}>
@@ -115,7 +143,10 @@ export default function TextPanel() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Output</h2>
-            <p className="text-xs text-slate-500">Responses stream from the Gemini API.</p>
+            <p className="text-xs text-slate-500">
+              Responses are generated via the selected provider (Gemini or LM
+              Studio) through the backend.
+            </p>
           </div>
           <IconButton
             type="button"

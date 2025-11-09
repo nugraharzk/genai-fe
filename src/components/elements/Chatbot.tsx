@@ -1,21 +1,28 @@
-import { FormEvent, useCallback, useLayoutEffect, useRef, useState } from 'react';
-import type { ChangeEvent, KeyboardEvent } from 'react';
-import { Button, IconButton } from '../base';
-import { cn } from '../utils';
-import { chatWithGeminiApi } from '../../api';
-import MarkdownOutput from './MarkdownOutput';
+import {
+  FormEvent,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import type { ChangeEvent, KeyboardEvent } from "react";
+import { Button, IconButton } from "../base";
+import { cn } from "../utils";
+import { chatWithGeminiApi } from "../../api";
+import MarkdownOutput from "./MarkdownOutput";
+import ProviderSelect from "./ProviderSelect";
 
 type ChatMessage = {
   id: string;
   text: string;
-  sender: 'user' | 'bot';
-  status?: 'error';
+  sender: "user" | "bot";
+  status?: "error";
 };
 
 const createMessage = (
   text: string,
-  sender: ChatMessage['sender'],
-  status?: ChatMessage['status'],
+  sender: ChatMessage["sender"],
+  status?: ChatMessage["status"],
 ): ChatMessage => ({
   id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
   text,
@@ -26,8 +33,9 @@ const createMessage = (
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [provider, setProvider] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -45,7 +53,7 @@ export default function Chatbot() {
   };
 
   const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       event.currentTarget.form?.requestSubmit();
     }
@@ -55,13 +63,13 @@ export default function Chatbot() {
     const container = messagesContainerRef.current;
     if (!container) {
       messagesEndRef.current?.scrollIntoView({
-        behavior: isOpen ? 'smooth' : 'auto',
-        block: 'end',
+        behavior: isOpen ? "smooth" : "auto",
+        block: "end",
       });
       return;
     }
     if (isOpen) {
-      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
     } else {
       container.scrollTop = container.scrollHeight;
     }
@@ -86,10 +94,10 @@ export default function Chatbot() {
       return;
     }
 
-    const userMessage = createMessage(trimmed, 'user');
+    const userMessage = createMessage(trimmed, "user");
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
-    setInputValue('');
+    setInputValue("");
     setIsSending(true);
     inputRef.current?.focus();
 
@@ -97,22 +105,23 @@ export default function Chatbot() {
       const response = await chatWithGeminiApi({
         prompt: trimmed,
         history: nextMessages.map((message) => ({
-          role: message.sender === 'user' ? 'user' : 'assistant',
+          role: message.sender === "user" ? "user" : "assistant",
           content: message.text,
         })),
+        provider: provider || undefined,
       });
 
       const reply = response.text?.trim();
       const botText = reply?.length
         ? reply
-        : 'Gemini did not return a response. Please try asking again.';
-      setMessages((prev) => [...prev, createMessage(botText, 'bot')]);
+        : "Gemini did not return a response. Please try asking again.";
+      setMessages((prev) => [...prev, createMessage(botText, "bot")]);
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : 'Gemini chat is unavailable right now. Please try again later.';
-      setMessages((prev) => [...prev, createMessage(message, 'bot', 'error')]);
+          : "Gemini chat is unavailable right now. Please try again later.";
+      setMessages((prev) => [...prev, createMessage(message, "bot", "error")]);
     } finally {
       setIsSending(false);
     }
@@ -127,30 +136,40 @@ export default function Chatbot() {
           </span>
           <div className="leading-tight">
             <p className="text-sm font-semibold">Gemini Chat</p>
-            <p className="text-xs text-white/80">Ask anything and explore ideas.</p>
+            <p className="text-xs text-white/80">
+              Ask anything and explore ideas.
+            </p>
           </div>
         </div>
-        <IconButton
-          aria-label="Close Gemini chat"
-          tone="neutral"
-          size="sm"
-          className="text-white hover:bg-white/10 focus-visible:ring-white/70 focus-visible:ring-offset-brand-600"
-          onClick={closeChat}
-        >
-          <svg
-            aria-hidden="true"
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
+
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:block w-56">
+            <ProviderSelect value={provider} onChange={setProvider} />
+          </div>
+
+          <IconButton
+            aria-label="Close Gemini chat"
+            tone="neutral"
+            size="sm"
+            className="text-white hover:bg-white/10 focus-visible:ring-white/70 focus-visible:ring-offset-brand-600"
+            onClick={closeChat}
           >
-            <line x1="18" x2="6" y1="6" y2="18" />
-            <line x1="6" x2="18" y1="6" y2="18" />
-          </svg>
-        </IconButton>
+            <svg
+              aria-hidden="true"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <line x1="18" x2="6" y1="6" y2="18" />
+
+              <line x1="6" x2="18" y1="6" y2="18" />
+            </svg>
+          </IconButton>
+        </div>
       </header>
 
       <div className="flex flex-1 min-h-0 flex-col">
@@ -170,15 +189,15 @@ export default function Chatbot() {
               <div
                 key={message.id}
                 className={cn(
-                  'w-fit max-w-[80%] break-words rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm',
-                  message.status === 'error'
-                    ? 'mr-auto border border-rose-200 bg-rose-50 text-rose-700'
-                    : message.sender === 'user'
-                      ? 'ml-auto bg-brand-600 text-white'
-                      : 'mr-auto bg-slate-100 text-slate-900',
+                  "w-fit max-w-[80%] break-words rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm",
+                  message.status === "error"
+                    ? "mr-auto border border-rose-200 bg-rose-50 text-rose-700"
+                    : message.sender === "user"
+                      ? "ml-auto bg-brand-600 text-white"
+                      : "mr-auto bg-slate-100 text-slate-900",
                 )}
               >
-                {message.status === 'error' || message.sender !== 'bot' ? (
+                {message.status === "error" || message.sender !== "bot" ? (
                   message.text
                 ) : (
                   <MarkdownOutput content={message.text} />
@@ -189,7 +208,10 @@ export default function Chatbot() {
           <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3">
+        <form
+          onSubmit={handleSubmit}
+          className="flex items-center gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3"
+        >
           <input
             ref={inputRef}
             type="text"
@@ -233,10 +255,10 @@ export default function Chatbot() {
         <section
           id="gemini-chat-window"
           className={cn(
-            'hidden origin-bottom-right overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 transition-all duration-200 ease-out sm:flex sm:h-[30rem] sm:w-[22rem] sm:flex-col',
+            "hidden origin-bottom-right overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 transition-all duration-200 ease-out sm:flex sm:h-[30rem] sm:w-[22rem] sm:flex-col",
             isOpen
-              ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
-              : 'pointer-events-none translate-y-4 scale-95 opacity-0',
+              ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+              : "pointer-events-none translate-y-4 scale-95 opacity-0",
           )}
           role="dialog"
           aria-hidden={!isOpen}
@@ -250,12 +272,14 @@ export default function Chatbot() {
           variant="primary"
           size="lg"
           className={cn(
-            'h-14 w-14 rounded-full p-0 shadow-xl shadow-brand-900/20 transition-transform duration-200 ease-out sm:h-14 sm:w-14',
-            isOpen ? 'translate-y-1 ring-4 ring-brand-200 ring-offset-2 ring-offset-white' : 'translate-y-0',
+            "h-14 w-14 rounded-full p-0 shadow-xl shadow-brand-900/20 transition-transform duration-200 ease-out sm:h-14 sm:w-14",
+            isOpen
+              ? "translate-y-1 ring-4 ring-brand-200 ring-offset-2 ring-offset-white"
+              : "translate-y-0",
           )}
           aria-controls="gemini-chat-window gemini-chat-window-mobile"
           aria-expanded={isOpen}
-          aria-label={isOpen ? 'Minimise Gemini chat' : 'Open Gemini chat'}
+          aria-label={isOpen ? "Minimise Gemini chat" : "Open Gemini chat"}
         >
           <svg
             aria-hidden="true"
